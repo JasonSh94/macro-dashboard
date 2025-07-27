@@ -51,3 +51,23 @@ def plot_series(df: pd.DataFrame, title: str, moving_avg_window: Optional[int] =
         fig.add_scatter(x=ma_df["date"], y=ma_df["value"], mode="lines", name=f"{title} (MA {moving_avg_window})")
     fig.update_layout(margin=dict(l=10, r=10, t=40, b=10))
     return fig
+
+def build_dashboard():
+    st.set_page_config(page_title="Macro Dashboard", layout="wide")
+
+    # ✅ Debug: Confirm dashboard is running
+    st.write("✅ build_dashboard is running")
+
+    # 📊 Dummy chart for sanity check
+    dummy_data = pd.DataFrame({
+        "date": pd.date_range(end=datetime.date.today(), periods=30),
+        "value": [i + (i % 5) for i in range(30)]
+    }).set_index("date")
+    st.line_chart(dummy_data)
+
+    # 🚨 Commented out until debugging is done
+    # api_key = load_api_key()
+    # (your real dashboard logic continues here)
+
+if __name__ == "__main__":
+    build_dashboard()
