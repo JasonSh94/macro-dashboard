@@ -55,73 +55,62 @@ def plot_series(df: pd.DataFrame, title: str, moving_avg_window: Optional[int] =
 def build_dashboard():
     st.set_page_config(page_title="Macro Dashboard", layout="wide")
 
-    # ✅ Debug: Confirm dashboard is running
-    st.write("✅ build_dashboard is running")
+    api_key = load_api_key()
 
-    # 📊 Dummy chart for sanity check
-    dummy_data = pd.DataFrame({
-        "date": pd.date_range(end=datetime.date.today(), periods=30),
-        "value": [i + (i % 5) for i in range(30)]
-    }).set_index("date")
-    st.line_chart(dummy_data)
+    series_config: Dict[str, List[Dict[str, str]]] = {
+        "Prices": [
+            {"id": "CPIAUCSL", "name": "CPI (All Urban Consumers, SA)"},
+            {"id": "PCEPI", "name": "PCE Price Index"},
+            {"id": "CPILFESL", "name": "Core CPI (Less Food & Energy)"},
+            {"id": "DGORDER", "name": "New Orders for Durable Goods"},
+            {"id": "WPUFD4", "name": "PPI: Finished Goods"},
+        ],
+        "Flows": [
+            {"id": "M2SL", "name": "Money Stock (M2)"},
+            {"id": "WM2NS", "name": "Money Stock (M2) NSA"},
+            {"id": "WMMFSL", "name": "Money Market Fund Assets (Weekly)"},
+            {"id": "WRESBAL", "name": "Reserves of Depository Institutions (Weekly)"},
+            {"id": "M1SL", "name": "Money Stock (M1)"},
+        ],
+        "Inflation": [
+            {"id": "CPILFESL", "name": "Core CPI (Less Food & Energy)"},
+            {"id": "CPIAUCSL", "name": "Headline CPI"},
+            {"id": "PPIACO", "name": "Producer Price Index: All Commodities"},
+            {"id": "T5YIEM", "name": "5‑Year Breakeven Inflation"},
+            {"id": "T10YIEM", "name": "10‑Year Breakeven Inflation"},
+        ],
+        "Growth": [
+            {"id": "GDP", "name": "Gross Domestic Product"},
+            {"id": "GDPC1", "name": "Real GDP"},
+            {"id": "PCEC96", "name": "Real Personal Consumption Expenditures"},
+            {"id": "GPDIC1", "name": "Real Private Domestic Investment"},
+            {"id": "GCECA", "name": "Gov’t Consumption & Investment"},
+        ],
+        "Expectations": [
+            {"id": "UMCSENT", "name": "UMich: Consumer Sentiment"},
+            {"id": "NAPMPI", "name": "ISM Manufacturing PMI (Revised)"},
+            {"id": "T10Y2Y", "name": "10Y - 2Y Treasury Spread"},
+        ],
+    }
 
-api_key = load_api_key()
-
-series_config: Dict[str, List[Dict[str, str]]] = {
-    "Prices": [
-        {"id": "CPIAUCSL", "name": "CPI (All Urban Consumers, SA)"},
-        {"id": "PCEPI", "name": "PCE Price Index"},
-        {"id": "CPILFESL", "name": "Core CPI (Less Food & Energy)"},
-        {"id": "DGORDER", "name": "New Orders for Durable Goods"},
-        {"id": "WPUFD4", "name": "PPI: Finished Goods"},
-    ],
-    "Flows": [
-        {"id": "M2SL", "name": "Money Stock (M2)"},
-        {"id": "WM2NS", "name": "Money Stock (M2) NSA"},
-        {"id": "WMMFSL", "name": "Money Market Fund Assets (Weekly)"},
-        {"id": "WRESBAL", "name": "Reserves of Depository Institutions (Weekly)"},
-        {"id": "M1SL", "name": "Money Stock (M1)"},
-    ],
-    "Inflation": [
-        {"id": "CPILFESL", "name": "Core CPI (Less Food & Energy)"},
-        {"id": "CPIAUCSL", "name": "Headline CPI"},
-        {"id": "PPIACO", "name": "Producer Price Index: All Commodities"},
-        {"id": "T5YIEM", "name": "5‑Year Breakeven Inflation"},
-        {"id": "T10YIEM", "name": "10‑Year Breakeven Inflation"},
-    ],
-    "Growth": [
-        {"id": "GDP", "name": "Gross Domestic Product"},
-        {"id": "GDPC1", "name": "Real GDP"},
-        {"id": "PCEC96", "name": "Real Personal Consumption Expenditures"},
-        {"id": "GPDIC1", "name": "Real Private Domestic Investment"},
-        {"id": "GCECA", "name": "Gov’t Consumption & Investment"},
-    ],
-    "Expectations": [
-        {"id": "UMCSENT", "name": "UMich: Consumer Sentiment"},
-        {"id": "NAPMPI", "name": "ISM Manufacturing PMI (Revised)"},
-        {"id": "T10Y2Y", "name": "10Y - 2Y Treasury Spread"},
-    ],
-}
-
-tabs = st.tabs(list(series_config.keys()))
-for cat_idx, (category, series_list) in enumerate(series_config.items()):
-    with tabs[cat_idx]:
-        st.subheader(category)
-        col_count = 2
-        rows = [series_list[i:i + col_count] for i in range(0, len(series_list), col_count)]
-        for row_series in rows:
-            cols = st.columns(len(row_series))
-            for idx, series_info in enumerate(row_series):
-                with cols[idx]:
-                    sid = series_info["id"]
-                    name = series_info["name"]
-                    try:
-                        df = fetch_fred_series(sid, api_key)
-                        fig = plot_series(df, name)
-                        st.plotly_chart(fig, use_container_width=True, key=f"{sid}_chart")
-                    except Exception as exc:
-                        st.error(f"Error loading {name}: {exc}")
-
+    tabs = st.tabs(list(series_config.keys()))
+    for cat_idx, (category, series_list) in enumerate(series_config.items()):
+        with tabs[cat_idx]:
+            st.subheader(category)
+            col_count = 2
+            rows = [series_list[i:i + col_count] for i in range(0, len(series_list), col_count)]
+            for row_series in rows:
+                cols = st.columns(len(row_series))
+                for idx, series_info in enumerate(row_series):
+                    with cols[idx]:
+                        sid = series_info["id"]
+                        name = series_info["name"]
+                        try:
+                            df = fetch_fred_series(sid, api_key)
+                            fig = plot_series(df, name)
+                            st.plotly_chart(fig, use_container_width=True, key=f"{sid}_chart")
+                        except Exception as exc:
+                            st.error(f"Error loading {name}: {exc}")
 
 if __name__ == "__main__":
     build_dashboard()
